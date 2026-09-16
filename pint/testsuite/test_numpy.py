@@ -355,6 +355,16 @@ class TestNumpyMathematicalFunctions(TestNumpyMethods):
             np.nansum(self.q_nan, axis=0), [4, 2] * self.ureg.m
         )
 
+    def test_sum_with_initial_arg(self):
+        # a Quantity `initial` should be converted, not added as a bare magnitude
+        # (https://github.com/hgrecco/pint/issues/2400)
+        assert np.sum(self.q, initial=100 * self.ureg.cm) == 11 * self.ureg.m
+        with pytest.raises(DimensionalityError):
+            np.sum(self.q, initial=1 * self.ureg.s)
+
+    def test_nansum_with_initial_arg(self):
+        assert np.nansum(self.q_nan, initial=100 * self.ureg.cm) == 7 * self.ureg.m
+
     def test_cumprod(self):
         with pytest.raises(DimensionalityError):
             self.q.cumprod()
@@ -683,6 +693,13 @@ class TestNumpyUnclassified(TestNumpyMethods):
         q = self.q.flatten()
         with pytest.raises(DimensionalityError):
             q.searchsorted([1.5, 2.5])
+
+    def test_searchsorted_sorter(self):
+        q = [30.0, 10.0, 20.0] * self.ureg.m
+        sorter = [1, 2, 0]
+        self.assertNDArrayEqual(
+            q.searchsorted([15.0, 25.0] * self.ureg.m, "left", sorter), [1, 2]
+        )
 
     def test_searchsorted_numpy_func(self):
         """Test searchsorted as numpy function."""
